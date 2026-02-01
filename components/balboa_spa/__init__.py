@@ -2,6 +2,12 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import uart
 from esphome.const import CONF_ID
+from esphome import pins
+
+CONF_TX_ENABLE_PIN = "tx_enable_pin"
+CONF_TX_ENABLE_INVERTED = "tx_enable_inverted"
+CONF_TX_ENABLE_DELAY_BEFORE_US = "tx_enable_delay_before_us"
+CONF_TX_ENABLE_DELAY_AFTER_US = "tx_enable_delay_after_us"
 
 DEPENDENCIES = ['uart']
 
