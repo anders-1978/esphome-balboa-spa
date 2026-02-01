@@ -13,6 +13,13 @@ namespace esphome
             input_queue.clear();
             output_queue.clear();
             filtersettings_update_timer = 0;
+
+            // Init TX enable pin (RS485 DE/RE)
+            if (this->tx_enable_pin_ != nullptr) {
+                this->tx_enable_pin_->setup();
+                // Start in receive mode
+                this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
+            }
         }
 
         void BalboaSpa::update()
@@ -548,6 +555,13 @@ namespace esphome
             output_queue.unshift(0x7E);
             output_queue.push(0x7E);
 
+            // --- TX enable (RS485 DE/RE) BEFORE sending ---
+            if (this->tx_enable_pin_ != nullptr) {
+                // Enable transmitter
+                this->tx_enable_pin_->digital_write(!this->tx_enable_inverted_);
+                delayMicroseconds(this->tx_enable_delay_before_us_);
+            }
+    
             for (loop_index = 0; loop_index < output_queue.size(); loop_index++)
             {
                 write(output_queue[loop_index]);
@@ -557,6 +571,12 @@ namespace esphome
 
             flush();
 
+            // --- TX enable (RS485 DE/RE) AFTER sending ---
+            if (this->tx_enable_pin_ != nullptr) {
+                delayMicroseconds(this->tx_enable_delay_after_us_);
+                // Disable transmitter (back to receive mode)
+                this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
+            }
             // DEBUG: print_msg(output_queue);
             output_queue.clear();
         }
