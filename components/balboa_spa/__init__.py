@@ -27,6 +27,10 @@ TEMP_SCALES = {
 }
 
 CONFIG_SCHEMA = cv.Schema({
+    cv.Optional(CONF_TX_ENABLE_PIN): pins.gpio_output_pin_schema,
+    cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
+    cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
+    cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
     cv.GenerateID(): cv.declare_id(BalboaSpa),
     cv.Optional(CONF_SPA_TEMP_SCALE, default=254): cv.enum(TEMP_SCALES, upper=True),
     cv.Optional(CONF_ESPHOME_TEMP_SCALE, default="C"): cv.enum(TEMP_SCALES, upper=True),
@@ -36,6 +40,13 @@ CONFIG_SCHEMA = cv.Schema({
 def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     yield cg.register_component(var, config)
+
+    if CONF_TX_ENABLE_PIN in config:
+    pin = await cg.gpio_pin_expression(config[CONF_TX_ENABLE_PIN])
+    cg.add(var.set_tx_enable_pin(pin))
+    cg.add(var.set_tx_enable_inverted(config[CONF_TX_ENABLE_INVERTED]))
+    cg.add(var.set_tx_enable_delay_before_us(config[CONF_TX_ENABLE_DELAY_BEFORE_US]))
+    cg.add(var.set_tx_enable_delay_after_us(config[CONF_TX_ENABLE_DELAY_AFTER_US]))
 
     if spa_temp_scale_conf := config.get(CONF_SPA_TEMP_SCALE):
         cg.add(var.set_spa_temp_scale(spa_temp_scale_conf))
