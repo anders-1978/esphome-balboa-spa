@@ -51,6 +51,11 @@ namespace esphome
       SpaFilterSettings *get_current_filter_settings();
       SpaFaultLog *get_current_fault_log();
 
+      void set_tx_enable_pin(esphome::GPIOPin *pin) { this->tx_enable_pin_ = pin; }
+      void set_tx_enable_inverted(bool inv) { this->tx_enable_inverted_ = inv; }
+      void set_tx_enable_delay_before_us(uint32_t us) { this->tx_enable_delay_before_us_ = us; }
+      void set_tx_enable_delay_after_us(uint32_t us) { this->tx_enable_delay_after_us_ = us; }
+
       void set_temp(float temp);
       void set_hour(int hour);
       void set_minute(int minute);
@@ -88,6 +93,12 @@ namespace esphome
       void request_fault_log_update();
 
     private:
+      esphome::GPIOPin *tx_enable_pin_{nullptr};
+      bool tx_enable_inverted_{false};
+      uint32_t tx_enable_delay_before_us_{200};
+      uint32_t tx_enable_delay_after_us_{1200};
+
+
       CircularBuffer<uint8_t, 100> input_queue;
       CircularBuffer<uint8_t, 100> output_queue;
       uint8_t received_byte, loop_index, temp_index;
