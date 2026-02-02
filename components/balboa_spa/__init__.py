@@ -4,57 +4,61 @@ from esphome.components import uart
 from esphome.const import CONF_ID
 from esphome import pins
 
+DEPENDENCIES = ["uart"]
+
+CONF_SPA_TEMP_SCALE = "spa_temp_scale"
+CONF_ESPHOME_TEMP_SCALE = "esphome_temp_scale"
+CONF_CLIENT_ID = "client_id"
+
 CONF_TX_ENABLE_PIN = "tx_enable_pin"
 CONF_TX_ENABLE_INVERTED = "tx_enable_inverted"
 CONF_TX_ENABLE_DELAY_BEFORE_US = "tx_enable_delay_before_us"
 CONF_TX_ENABLE_DELAY_AFTER_US = "tx_enable_delay_after_us"
 
-DEPENDENCIES = ['uart']
-
-CONF_SPA_ID = "balboa_spa_id"
-CONF_SPA_TEMP_SCALE = "spa_temp_scale"
-CONF_ESPHOME_TEMP_SCALE = "esphome_temp_scale"
-CONF_CLIENT_ID = "client_id"
-
-balboa_spa_ns = cg.esphome_ns.namespace('balboa_spa')
-BalboaSpa = balboa_spa_ns.class_('BalboaSpa', cg.Component, uart.UARTDevice)
+balboa_spa_ns = cg.esphome_ns.namespace("balboa_spa")
+BalboaSpa = balboa_spa_ns.class_("BalboaSpa", cg.Component, uart.UARTDevice)
 
 TEMP_SCALE = balboa_spa_ns.enum("TEMP_SCALE")
 TEMP_SCALES = {
- 254: TEMP_SCALE.UNDEFINED,
- "F": TEMP_SCALE.F,
- "C": TEMP_SCALE.C,
+    254: TEMP_SCALE.UNDEFINED,
+    "F": TEMP_SCALE.F,
+    "C": TEMP_SCALE.C,
 }
 
-CONFIG_SCHEMA = cv.Schema({
-    cv.GenerateID(): cv.declare_id(BalboaSpa),
-    cv.Optional(CONF_SPA_TEMP_SCALE, default=254): cv.enum(TEMP_SCALES, upper=True),
-    cv.Optional(CONF_ESPHOME_TEMP_SCALE, default="C"): cv.enum(TEMP_SCALES, upper=True),
-    cv.Optional(CONF_CLIENT_ID): cv.int_range(min=1, max=47),
-    cv.Optional(CONF_TX_ENABLE_PIN): pins.gpio_output_pin_schema,
-    cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
-    cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
-    cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
-}).extend(cv.COMPONENT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA)
+CONFIG_SCHEMA = (
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(BalboaSpa),
+            cv.Optional(CONF_SPA_TEMP_SCALE, default=254): cv.enum(TEMP_SCALES, upper=True),
+            cv.Optional(CONF_ESPHOME_TEMP_SCALE, default="C"): cv.enum(TEMP_SCALES, upper=True),
+            cv.Optional(CONF_CLIENT_ID): cv.int_range(min=1, max=47),
 
-def to_code(config):
+            # RS485 TX enable (DE/RE)
+            cv.Optional(CONF_TX_ENABLE_PIN): pins.gpio_output_pin_schema,
+            cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
+            cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
+            cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
+        }
+    )
+    .extend(cv.COMPONENT_SCHEMA)
+    .extend(uart.UART_DEVICE_SCHEMA)
+)
+
+async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
-    yield cg.register_component(var, config)
+    await cg.register_component(var, config)
+    await uart.register_uart_device(var, config)
 
+    # RS485 TX enable pin config
     if CONF_TX_ENABLE_PIN in config:
-    pin = await cg.gpio_pin_expression(config[CONF_TX_ENABLE_PIN])
-    cg.add(var.set_tx_enable_pin(pin))
-    cg.add(var.set_tx_enable_inverted(config[CONF_TX_ENABLE_INVERTED]))
-    cg.add(var.set_tx_enable_delay_before_us(config[CONF_TX_ENABLE_DELAY_BEFORE_US]))
-    cg.add(var.set_tx_enable_delay_after_us(config[CONF_TX_ENABLE_DELAY_AFTER_US]))
+        pin = await cg.gpio_pin_expression(config[CONF_TX_ENABLE_PIN])
+        cg.add(var.set_tx_enable_pin(pin))
+        cg.add(var.set_tx_enable_inverted(config[CONF_TX_ENABLE_INVERTED]))
+        cg.add(var.set_tx_enable_delay_before_us(config[CONF_TX_ENABLE_DELAY_BEFORE_US]))
+        cg.add(var.set_tx_enable_delay_after_us(config[CONF_TX_ENABLE_DELAY_AFTER_US]))
 
-    if spa_temp_scale_conf := config.get(CONF_SPA_TEMP_SCALE):
-        cg.add(var.set_spa_temp_scale(spa_temp_scale_conf))
+    cg.add(var.set_spa_temp_scale(config[CONF_SPA_TEMP_SCALE]))
+    cg.add(var.set_esphome_temp_scale(config[CONF_ESPHOME_TEMP_SCALE]))
 
-    if esphome_temp_scale_conf := config.get(CONF_ESPHOME_TEMP_SCALE):
-        cg.add(var.set_esphome_temp_scale(esphome_temp_scale_conf))
-
-    if client_id_conf := config.get(CONF_CLIENT_ID):
-        cg.add(var.set_client_id(client_id_conf))
-
-    yield uart.register_uart_device(var, config)
+    if CONF_CLIENT_ID in config:
+        cg.add(var.set_client_id(config[CONF_CLIENT_ID]))
