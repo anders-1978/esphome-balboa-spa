@@ -38,6 +38,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
             cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
             cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
+            cv.Optional("anders_test", default=123): cv.int_,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
