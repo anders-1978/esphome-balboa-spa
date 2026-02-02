@@ -10,6 +10,7 @@ CONF_SPA_TEMP_SCALE = "spa_temp_scale"
 CONF_ESPHOME_TEMP_SCALE = "esphome_temp_scale"
 CONF_CLIENT_ID = "client_id"
 
+CONF_SPA_ID = "balboa_spa_id"
 CONF_TX_ENABLE_PIN = "tx_enable_pin"
 CONF_TX_ENABLE_INVERTED = "tx_enable_inverted"
 CONF_TX_ENABLE_DELAY_BEFORE_US = "tx_enable_delay_before_us"
@@ -38,7 +39,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
             cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
             cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
-            cv.Optional("anders_test", default=123): cv.int_,
+            cv.Optional(CONF_SPA_ID): cv.use_id(BalboaSpa),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
