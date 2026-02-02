@@ -27,14 +27,14 @@ TEMP_SCALES = {
 }
 
 CONFIG_SCHEMA = cv.Schema({
-    cv.Optional(CONF_TX_ENABLE_PIN): pins.gpio_output_pin_schema,
-    cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
-    cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
-    cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
     cv.GenerateID(): cv.declare_id(BalboaSpa),
     cv.Optional(CONF_SPA_TEMP_SCALE, default=254): cv.enum(TEMP_SCALES, upper=True),
     cv.Optional(CONF_ESPHOME_TEMP_SCALE, default="C"): cv.enum(TEMP_SCALES, upper=True),
     cv.Optional(CONF_CLIENT_ID): cv.int_range(min=1, max=47),
+    cv.Optional(CONF_TX_ENABLE_PIN): pins.gpio_output_pin_schema,
+    cv.Optional(CONF_TX_ENABLE_INVERTED, default=False): cv.boolean,
+    cv.Optional(CONF_TX_ENABLE_DELAY_BEFORE_US, default=200): cv.positive_int,
+    cv.Optional(CONF_TX_ENABLE_DELAY_AFTER_US, default=1200): cv.positive_int,
 }).extend(cv.COMPONENT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA)
 
 def to_code(config):
