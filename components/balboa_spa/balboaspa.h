@@ -157,5 +157,5 @@ namespace esphome
       void decodeFault();
     };
 
-  } // namespace empty_uart_component
+  } // namespace balboa_spa
 } // namespace esphome
