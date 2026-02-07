@@ -1,4 +1,6 @@
 #include "balboaspa.h"
+#include "esp_rom_sys.h"
+#include "driver/uart.h"
 
 namespace esphome
 {
@@ -555,30 +557,31 @@ namespace esphome
             output_queue.unshift(0x7E);
             output_queue.push(0x7E);
 
-            // --- TX enable (RS485 DE/RE) BEFORE sending ---
-            if (this->tx_enable_pin_ != nullptr) {
-                // Enable transmitter
-                this->tx_enable_pin_->digital_write(!this->tx_enable_inverted_);
-                delayMicroseconds(this->tx_enable_delay_before_us_);
-            }
-    
-            for (loop_index = 0; loop_index < output_queue.size(); loop_index++)
-            {
-                write(output_queue[loop_index]);
-            }
+      // ---- Guard idle time before TX (Balboa likes this) ----
+esp_rom_delay_us(200);
 
-            // print_msg(output_queue);
+// --- Enable RS485 transmitter ---
+if (this->tx_enable_pin_ != nullptr) {
+    this->tx_enable_pin_->digital_write(!this->tx_enable_inverted_);
+    esp_rom_delay_us(this->tx_enable_delay_before_us_);
+}
 
-            flush();
+// --- Send entire buffer in one block (NO byte loop) ---
+write_array(output_queue.data(), output_queue.size());
 
-            // --- TX enable (RS485 DE/RE) AFTER sending ---
-            if (this->tx_enable_pin_ != nullptr) {
-                delayMicroseconds(this->tx_enable_delay_after_us_);
-                // Disable transmitter (back to receive mode)
-                this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
-            }
-            // DEBUG: print_msg(output_queue);
-            output_queue.clear();
+// --- Wait until last bit is physically sent ---
+uart_wait_tx_done(this->uart_num_, pdMS_TO_TICKS(20));
+
+// --- Extra guard delay ---
+esp_rom_delay_us(this->tx_enable_delay_after_us_);
+
+// --- Back to receive mode ---
+if (this->tx_enable_pin_ != nullptr) {
+    this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
+}
+
+output_queue.clear();
+
         }
 
         void BalboaSpa::print_msg(CircularBuffer<uint8_t, 100> &data)
