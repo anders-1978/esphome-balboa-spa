@@ -557,30 +557,39 @@ namespace esphome
             output_queue.unshift(0x7E);
             output_queue.push(0x7E);
 
-      // ---- Guard idle time before TX (Balboa likes this) ----
-esp_rom_delay_us(200);
+            // --- Guard idle before TX ---
+            esp_rom_delay_us(200);
 
-// --- Enable RS485 transmitter ---
-if (this->tx_enable_pin_ != nullptr) {
-    this->tx_enable_pin_->digital_write(!this->tx_enable_inverted_);
-    esp_rom_delay_us(this->tx_enable_delay_before_us_);
-}
+            // Enable transmitter
+            if (this->tx_enable_pin_ != nullptr) {
+                this->tx_enable_pin_->digital_write(!this->tx_enable_inverted_);
+                esp_rom_delay_us(this->tx_enable_delay_before_us_);
+            }
 
-// --- Send entire buffer in one block (NO byte loop) ---
-write_array(output_queue.data(), output_queue.size());
+            // Send bytes normally (CircularBuffer safe)
+            uint8_t temp_buf[128];
+            int n = 0;
+            
+            for (loop_index = 0; loop_index < output_queue.size(); loop_index++) {
+                temp_buf[n++] = output_queue[loop_index];
+            }
+            
+            write_array(temp_buf, n);
+            flush();
+            delay(1);
+            
+            delay(1);   // critical on ESP32-C3
+            
+            // Post-TX delay (Balboa needs silent gap)
+            esp_rom_delay_us(this->tx_enable_delay_after_us_);
+            
+            // Back to RX
+            if (this->tx_enable_pin_ != nullptr) {
+                this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
+            }
+            
+            output_queue.clear();
 
-// --- Wait until last bit is physically sent ---
-uart_wait_tx_done(this->uart_num_, pdMS_TO_TICKS(20));
-
-// --- Extra guard delay ---
-esp_rom_delay_us(this->tx_enable_delay_after_us_);
-
-// --- Back to receive mode ---
-if (this->tx_enable_pin_ != nullptr) {
-    this->tx_enable_pin_->digital_write(this->tx_enable_inverted_);
-}
-
-output_queue.clear();
 
         }
 
