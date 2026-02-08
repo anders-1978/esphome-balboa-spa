@@ -263,17 +263,17 @@ namespace esphome
 
         void BalboaSpa::toggle_jet2()
         {
-            send_command = 0x06;
+            send_command = 0x0C;
         }
 
         void BalboaSpa::toggle_jet3()
         {
-            send_command = 0x0C;
+            send_command = 0x06;
         }
 
         void BalboaSpa::toggle_jet4()
         {
-            send_command = 0x08;
+            send_command = 0x07;
         }
 
         void BalboaSpa::toggle_blower()
